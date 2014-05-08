@@ -1,0 +1,18 @@
+{
+    "resources": {
+        "media": []
+    },
+    "longName": "LEQUIPE",
+    "appKeys": {},
+    "watchapp": {
+        "watchface": false
+    },
+    "versionLabel": "1.0",
+    "shortName": "LEQUIPE",
+    "companyName": "laurent@wit.ai",
+    "capabilities": [
+        ""
+    ],
+    "versionCode": 1,
+    "uuid": "79dd095e-4128-4a11-bd1c-320414547c5e"
+}
