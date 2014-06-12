@@ -8,35 +8,40 @@ var apptitle = "L'equipe";
 var api_key = "e0410419639a90c0e2ac742009fffaf6";//kimono
 var api_route_live = "3jugnfpo";
 var api_route_feed = "4o27nrmg";
+var score_map = {};
  
 var notrequesting = true;
 var feedtimer,status = null;//timers for both status while requesting the feed and for updating the feed
 var ipending = 0; //nbr of period
 var currentstatus = "";
 var bmenu =true; //state
+var blive = true; //live or feed
 
 simply.on('singleClick', function(e) {
   console.log('Pressed ' + e.button + '!');
+  apptitle = "L'equipe";
   if(bmenu)
   {
     if (e.button === 'up') {
       bmenu = false;
       apptitle += "-feed"
       simply.scrollable(true);
-      startfeed(15*60,false);//feed every 15 min
+      blive = false;
+      startfeed(15*60);//feed every 15 min
     }
     else if (e.button === 'down') {
       bmenu = false;
       apptitle += "-live"
       simply.scrollable(true);
-      startfeed(2*60,true);//live every minute
+      blive = true;
+      startfeed(2*60);//live every minute
     }
   }
   else
   {
     if (e.button === 'select') {
       //update feed or live
-      startfeedtimer();
+      startfeed();
     }
     else if (e.button === 'back') {
       clearInterval(feedtimer);
@@ -65,7 +70,7 @@ function setmenu() {
     title: apptitle,
      body: 'Welcome to the feed from l\'equipe.fr by l5t\n\n' + 
            'Click UP for the feed\n' +
-           'Click DOWN for the live\n Long click to go back to this menu'
+           'Click DOWN for the live\nLong click to go back to this menu'
     }, true);
   bmenu=true;
   simply.scrollable(false);
@@ -78,6 +83,7 @@ function setstatus(st) {
   {
     clearInterval(status);
     console.log("clear status");
+    ipending = 0;
   }
   if(st)
   {
@@ -85,8 +91,12 @@ function setstatus(st) {
     status = setInterval(function()
       {
         ipending++;
+        console.log("currentstatus.length:" + currentstatus.length);
         if(ipending > 4)
+        {
           currentstatus = currentstatus.substr(0, currentstatus.length - 4);
+          ipending = 1;
+        }
         else
         {
           currentstatus = currentstatus + ".";
@@ -99,27 +109,44 @@ function setstatus(st) {
     simply.title(apptitle);
 }
 
-function startfeed(isec,blive) {
+function startfeed(isec) {
   console.log('Feed ON');
-  requestfeed(blive); 
-  if(feedtimer)
+  requestfeed(); 
+  if(feedtimer) {
      clearInterval(feedtimer);
-   feedtimer = setInterval(function(){
+  }
+  feedtimer = setInterval(function(){
       console.log('Requesting Feed Again');
-      requestfeed(blive);
-    }, isec * 1000); //Currently Kimono provide update every 15 min
+      requestfeed();
+    }, isec * 1000); //Currently Kimono provide update every x min
   
 }
 function cleangamesummary(gamesum) {
   var res = gamesum.replace(/(commenté |Pariez|Terminé)/g, "");
-  //store the score
   res = res.replace(/\(\d+\)0(\d+h\d+)0/g, "$1");
   //remove the rank
   res = res.replace(/\(\d+\)/g, "");
   console.log("res: " +res);
+  //store the score if started
+  var score = /(\d-\d)/g.exec(res);
+  if(score[0])
+  {
+      console.log("score: " + score[0]);
+      //vibrate if score is updated ie GOAAALLLL
+      console.log("map" +  JSON.stringify(score_map));
+      if(score_map[res.substring(0,3)] && score_map[res.substring(0, 3)]!= score[0]) {
+        console.log("previous score:" + score_map[res.substring(0, 3)]);
+        simply.vibe();
+        score_map[res.substring(0, 3)] = score[0];
+        console.log("new score:" + score_map[res.substring(0, 3)]);
+      }
+      else
+        score_map[res.substring(0, 3)] = score[0];     
+  }
+  
   return res;
 }
-function requestfeed(blive) {
+function requestfeed() {
   setstatus("   ");
   notrequesting = false;
   var api_url = 'http://www.kimonolabs.com/api/'+ (blive? api_route_live: api_route_feed)+ '?apikey='+ api_key;
