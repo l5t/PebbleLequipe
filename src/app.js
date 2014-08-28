@@ -34,7 +34,7 @@ simply.on('singleClick', function(e) {
       apptitle += "-live"
       simply.scrollable(true);
       blive = true;
-      startfeed(2*60);//live every minute
+      startfeed(2*60);//live every other minute
     }
   }
   else
@@ -92,10 +92,10 @@ function setstatus(st) {
       {
         ipending++;
         console.log("currentstatus.length:" + currentstatus.length);
-        if(ipending > 4)
+        if(ipending > 3)
         {
-          currentstatus = currentstatus.substr(0, currentstatus.length - 4);
-          ipending = 1;
+          currentstatus = currentstatus.substr(0, currentstatus.length - 3);
+          ipending = 0;
         }
         else
         {
@@ -103,7 +103,7 @@ function setstatus(st) {
         }
         console.log('status interval:' + ipending + '-'+ currentstatus);
         simply.title(currentstatus);
-      }, 500);
+      }, 1000);
   }
   else
     simply.title(apptitle);
@@ -122,26 +122,30 @@ function startfeed(isec) {
   
 }
 function cleangamesummary(gamesum) {
-  var res = gamesum.replace(/(commenté |Pariez|Terminé)/g, "");
-  res = res.replace(/\(\d+\)0(\d+h\d+)0/g, "$1");
-  //remove the rank
-  res = res.replace(/\(\d+\)/g, "");
-  console.log("res: " +res);
-  //store the score if started
-  var score = /(\d-\d)/g.exec(res);
-  if(score[0])
+  var res = gamesum;
+  if(gamesum)
   {
-      console.log("score: " + score[0]);
-      //vibrate if score is updated ie GOAAALLLL
-      console.log("map" +  JSON.stringify(score_map));
-      if(score_map[res.substring(0,3)] && score_map[res.substring(0, 3)]!= score[0]) {
-        console.log("previous score:" + score_map[res.substring(0, 3)]);
-        simply.vibe();
-        score_map[res.substring(0, 3)] = score[0];
-        console.log("new score:" + score_map[res.substring(0, 3)]);
-      }
-      else
-        score_map[res.substring(0, 3)] = score[0];     
+    res = gamesum.replace(/(commenté |Pariez|Terminé)/g, "");
+    res = res.replace(/\(\d+\)0(\d+h\d+)0/g, "$1");
+    //remove the rank
+    res = res.replace(/\(\d+\)/g, "");
+    console.log("cleangame res: " +res);
+    //store the score if started
+    var score = /(\d-\d)/g.exec(res);
+    if(score && score[0])
+    {
+        console.log("score: " + score[0]);
+        //vibrate if score is updated ie GOAAALLLL
+        console.log("map" +  JSON.stringify(score_map));
+        if(score_map[res.substring(0,3)] && score_map[res.substring(0, 3)]!= score[0]) {
+          console.log("previous score:" + score_map[res.substring(0, 3)]);
+          simply.vibe();
+          score_map[res.substring(0, 3)] = score[0];
+          console.log("new score:" + score_map[res.substring(0, 3)]);
+        }
+        else
+          score_map[res.substring(0, 3)] = score[0];     
+    }
   }
   
   return res;
@@ -159,10 +163,10 @@ function requestfeed() {
     for(var i=0;i<10 && i<arr.length;i++){
       
       if(blive) {
-        if(arr[i]["game"]["text"])
-          gamesum = arr[i]["game"]["text"];
-        else
-          gamesum = arr[i]["game"];
+        if(arr[i].game.text)
+          gamesum = arr[i].game.text;
+        else if (typeof arr[i].game == 'string')
+          gamesum = arr[i].game;
         gamesum = cleangamesummary(gamesum);
         ne += '- '+ gamesum + '\n'; //arr[i]["compet"]
       }
